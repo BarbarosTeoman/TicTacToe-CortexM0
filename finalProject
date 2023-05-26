@@ -1,0 +1,646 @@
+Stack_Size			EQU	0x800;						; Define stack size
+
+					; Define vector for interrupts and stack
+					AREA STACK, NOINIT, READWRITE, ALIGN=3
+Stack_Mem			SPACE	Stack_Size
+__initial_sp
+					AREA RESET, DATA, READONLY
+					EXPORT 	__Vectors
+					EXPORT	__Vectors_End
+__Vectors			DCD		__initial_sp
+					DCD		Reset_Handler
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		0
+					DCD		Button_Handler
+
+__Vectors_End
+
+;--------------------------------------------------------------------------------------------------------------------------------------		
+					; Define button interrupt handler
+					AREA 	button, CODE, READONLY
+Button_Handler		PROC
+					EXPORT	Button_Handler
+					push{r1}
+
+					ldr		r0, =0x40010010		; Button address
+					ldr		r1, =0x40010000		; LCD address
+					ldrb	r7, [r0]			; Read value from the button address
+
+;--------------------------------------------------------------------------------------------------------------------------------------					
+					subs 	r6, #34
+					subs 	r4, #34
+					movs 	r3, r4
+					movs 	r2, r6
+					adds 	r2, r2, #69
+					
+nr5				    str    	r6, [r1]
+					movs	r4, r3
+nc5				    str		r4, [r1, #0x4] 	;store col to col register
+					ldr		r5, =0xFFFFFFFF
+					str     r5, [r1, #0x8]
+					adds    r4, r4, #1     	;increment the col counter
+
+					movs 	r5, r3
+					adds 	r5, r5, #69
+					cmp     r4, r5        	;check if we reached end of row
+					bne     nc5
+					
+					adds    r6, r6, #1     	;increment the row counter
+					cmp		r6, r2
+					bne		nr5
+					subs 	r6, #35
+					subs 	r4, #35
+					str    	r6, [r1] 
+					str		r4, [r1, #0x4]
+
+					ldr		r3, =0x20000800
+					ldr		r0,	[r3]
+					adds	r0, #1
+					lsls	r0, r0, #2
+					adds	r3, r0
+					ldr		r0, [r3]
+					cmp		r0, #0
+					beq		next10
+					cmp		r0, #1
+					bne		drawO2
+					
+					subs	r6, #30
+					subs	r4, #30
+					push	{r4}
+					adds	r4, #60
+					movs	r5, r4
+					pop		{r4}
+					str    	r6, [r1]
+					str    	r4, [r1, #0x4]
+newpixel5			ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r4, #1
+					adds    r6, #1
+					str    	r6, [r1]       
+					str		r4, [r1, #0x4]
+					cmp     r4, r5
+					bne     newpixel5
+					subs    r6, #60
+					subs	r5, #60
+newpixel6			ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r4, #1
+					adds    r6, #1
+					str    	r6, [r1]        
+					str		r4, [r1, #0x4]
+					cmp     r4, r5
+					bne     newpixel6
+					subs	r6, #30
+					adds	r4, #30
+					b		next10
+					
+drawO2				subs	r6, #25
+					subs	r4, #25
+					movs	r5, #0	
+					str    	r6, [r1]
+					str    	r4, [r1, #0x4]
+upper3				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r4, #1
+					str		r4, [r1, #0x4]		
+					adds 	r5, #1
+					cmp     r5, #50
+					bne     upper3
+right3				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r6, #1
+					str    	r6, [r1]
+					adds 	r5, #1
+					cmp     r5, #100
+					bne     right3
+bottom3				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r4, #1
+					str		r4, [r1, #0x4]
+					adds 	r5, #1
+					cmp     r5, #150
+					bne     bottom3
+left3				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r6, #1
+					str    	r6, [r1]
+					adds 	r5, #1
+					cmp     r5, #200
+					bne     left3
+					adds	r6, #25
+					adds	r4, #25
+
+;--------------------------------------------------------------------------------------------------------------------------------------
+
+next10				cmp 	r6,#0
+					bne		next11
+					movs 	r4, #90
+					movs	r6, #50
+					b		next6
+					
+next11              cmp     r7, #0x08           ; Check if B pressed
+                    bne     next7
+
+                    ldr     r5, =0xFFFFFFFF ; White pixel code
+                    ldr     r1, =0x40010000
+                    
+                    ; SET THE BACKGROUND TO WHITE
+                    movs    r3, #0
+nr8                 str     r3, [r1]
+                    movs    r4, #0
+nc8                 str     r4, [r1, #0x4]     ;store col to col register
+                    str     r5, [r1, #0x8]
+                    adds    r4, r4, #1         ;increment the col counter
+                    ldr     r2, =320
+                    cmp     r4, r2           ;check if we reached end of row
+                    bne     nc8
+                    adds    r3, r3, #1         ;increment the row counter
+                    cmp     r3, #240
+                    bne     nr8
+            
+;--------------------------------------------------------------------------------
+                    ; Draw horizontal lines
+                    ldr     r5, =0xFF000000 ; Black pixel code
+                    movs    r3, #15
+nr7                 str     r3, [r1]
+                    movs    r4, #55
+nc7                 str     r4, [r1, #0x4]     ;store col to col register
+                    str     r5, [r1, #0x8]
+                    adds    r4, r4, #1         ;increment the col counter
+                    ldr     r2, =266
+                    cmp     r4, r2           ;check if we reached end of row
+                    bne     nc7
+                    adds    r3, r3, #70         ;increment the row counter
+                    cmp     r3, #230
+                    bls     nr7
+
+;--------------------------------------------------------------------------------
+                    ; Draw vertical lines
+                    movs    r3, #15
+                    movs    r4, #55
+                    
+nr6                 str     r4, [r1, #0x4]
+                    movs    r3, #15
+                    
+nc6                 str     r3, [r1]     ;store col to col register
+                    str     r5, [r1, #0x8]
+                    
+                    adds    r3, r3, #1         ;increment the row counter
+                    cmp     r3, #225           ;check if we reached end of row
+                    bne     nc6
+                    adds    r4, r4, #70         ;increment the col counter
+                    ldr     r2, =300
+                    cmp     r4, r2
+                    bls     nr6
+                    movs    r6, #50
+                    str     r6, [r1]
+                    movs    r4, #90
+                    str     r4, [r1, #0x4]
+                    movs    r2, #1
+                    str     r2, [r1, #0xc]     ;refresh screen
+                    
+                    ;Clear the ram
+                    ldr     r5, =0x20000800
+                    movs    r2, #0
+                    movs    r3, #1
+ram_clear           str     r2, [r5]
+                    adds    r5, r5, #4
+                    adds    r3, r3, #1
+                    cmp     r3, #15
+                    bne     ram_clear
+                    
+                    ldr     r2, =0x20000800
+                    movs    r3, #1
+                    str     r3, [r2]
+                    b       next6
+                    
+                    
+                    
+next7				cmp		r7, #0x04			; Check if A pressed
+					bne		next2
+					
+;-------------------------------------------------OOOOOOOOOOOOOO					
+					
+					ldr		r2, =0x20000800
+					ldr		r0, [r2]
+					ldr		r3, [r2, #0x4]
+					
+					movs	r5, r0
+					adds	r5, #1
+					lsls	r5, r5, #2
+					adds	r2, r5
+					ldr		r5, [r2]
+					cmp		r5, #0
+					bne		next2
+
+					ldr		r2, =0x20000800
+					cmp		r3, #1
+					bne		next9
+					subs	r6, #25
+					subs	r4, #25
+					
+					movs	r5, #0
+					str    	r6, [r1]
+					str    	r4, [r1, #0x4]
+					push	{r0}
+					adds	r0, #1
+					lsls	r0, r0, #2
+					adds	r2, r0
+					movs	r0, #2
+					str		r0, [r2]
+					pop		{r0}
+upper				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r4, #1
+					str		r4, [r1, #0x4]		
+					adds 	r5, #1
+					cmp     r5, #50
+					bne     upper
+					
+right				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r6, #1
+					str    	r6, [r1]
+					adds 	r5, #1
+					cmp     r5, #100
+					bne     right
+					
+bottom				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r4, #1
+					str		r4, [r1, #0x4]
+					adds 	r5, #1
+					cmp     r5, #150
+					bne     bottom	
+					
+left				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r6, #1
+					str    	r6, [r1]
+					
+					adds 	r5, #1
+					cmp     r5, #200
+					bne     left
+					adds	r6, #25
+					adds	r4, #25
+					ldr		r2, =0x20000800
+					movs    r3, #0
+					str		r3, [r2, #0x4]
+					b		next2
+					
+;-------------------------------------------------XXXXXXXXXXXXXXXX
+next9				subs	r6, #30
+					subs	r4, #30
+					push	{r4}
+					adds	r4, #60
+					movs	r5, r4
+					pop		{r4}
+					str    	r6, [r1]
+					str    	r4, [r1, #0x4]
+					adds	r0, #1
+					lsls	r0, r0, #2
+					adds	r2, r0
+					movs	r0, #1
+					str		r0, [r2]
+newpixel			ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r4, #1
+					adds    r6, #1
+					str    	r6, [r1]       
+					str		r4, [r1, #0x4]
+					cmp     r4, r5
+					bne     newpixel
+					subs    r6, #60
+					subs	r5, #60
+newpixel2			ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r4, #1
+					adds    r6, #1
+					str    	r6, [r1]        
+					str		r4, [r1, #0x4]
+					cmp     r4, r5
+					bne     newpixel2
+					subs	r6, #30
+					adds	r4, #30			
+					ldr		r2, =0x20000800
+					movs	r3, #1
+					str		r3, [r2, #0x4]
+					
+
+;--------------------------------------------------------------------------------					
+next2				cmp		r7, #0x10			; Check if Up pressed
+					bne		next3
+					cmp		r6, #120			; If the row value less than 50 go to bottom
+					blt		inc1
+					subs	r6, r6, #70			
+					
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					subs	r3, #3
+					str		r3, [r2]
+					
+					b		next3
+inc1				movs	r6, #190
+
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					adds	r3, #6
+					str		r3, [r2]
+
+next3				cmp		r7, #0x20			; Check if Down pressed
+					bne		next4
+					cmp		r6, #120
+					bgt		inc2
+					adds	r6, r6, #70
+					
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					adds	r3, #3
+					str		r3, [r2]
+					
+					b		next4
+inc2				movs	r6, #50
+
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					subs	r3, #6
+					str		r3, [r2]
+
+next4				cmp		r7, #0x40			; Check if Left pressed
+					bne		next5
+					cmp		r4, #160
+					blt		inc3
+					subs	r4, r4, #70
+					
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					subs	r3, #1
+					str		r3, [r2]
+					
+					b		next5
+inc3				movs	r4, #230
+
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					adds	r3, #2
+					str		r3, [r2]
+
+next5				cmp		r7, #0x80			; Check if Right pressed
+					bne		next6
+					cmp		r4, #160
+					bgt		inc4
+					adds	r4, r4, #70
+					
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					adds	r3, #1
+					str		r3, [r2]
+					
+					b		next6
+inc4				movs	r4, #90
+
+					ldr		r2, =0x20000800
+					ldr		r3, [r2]
+					subs	r3, #2
+					str		r3, [r2]
+
+					b		next6
+
+				
+; Draw gray				
+;--------------------------------------------------------------------------------	
+next6				
+					; Set the row and column values
+					subs 	r6, #34
+					subs 	r4, #34
+					movs 	r7, r4
+					movs 	r2, r6
+					adds 	r2, r2, #69
+		
+nr4					str    	r6, [r1]
+					movs	r4, r7
+nc4					str		r4, [r1, #0x4] 	;store col to col register  
+					ldr		r5, =0xFFEEEEEE
+					str     r5, [r1, #0x8]
+					adds    r4, r4, #1     	;increment the col counter
+					movs 	r5, r7
+					adds 	r5, r5, #69
+					cmp     r4, r5        	;check if we reached end of row
+					bne     nc4
+					adds    r6, r6, #1     	;increment the row counter
+					cmp		r6, r2
+					bne		nr4
+					
+					subs 	r6, #35
+					subs 	r4, #35
+					
+					str    	r6, [r1] 
+					str		r4, [r1, #0x4]
+		
+					ldr		r3, =0x20000800
+					ldr		r0,	[r3]
+					adds	r0, #1
+					lsls	r0, r0, #2
+					adds	r3, r0
+					ldr		r0, [r3]
+					cmp		r0, #0
+					beq		nothing
+					cmp		r0, #1
+					bne		drawO
+					
+					subs	r6, #30
+					subs	r4, #30
+					push	{r4}
+					adds	r4, #60
+					movs	r5, r4
+					pop		{r4}
+					str    	r6, [r1]
+					str    	r4, [r1, #0x4]
+newpixel3			ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r4, #1
+					adds    r6, #1
+					str    	r6, [r1]       
+					str		r4, [r1, #0x4]
+					cmp     r4, r5
+					bne     newpixel3
+					subs    r6, #60
+					subs	r5, #60
+newpixel4			ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r4, #1
+					adds    r6, #1
+					str    	r6, [r1]        
+					str		r4, [r1, #0x4]
+					cmp     r4, r5
+					bne     newpixel4
+					subs	r6, #30
+					adds	r4, #30
+					b		nothing
+					
+drawO				subs	r6, #25
+					subs	r4, #25
+					movs	r5, #0	
+					str    	r6, [r1]
+					str    	r4, [r1, #0x4]
+upper2				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r4, #1
+					str		r4, [r1, #0x4]		
+					adds 	r5, #1
+					cmp     r5, #50
+					bne     upper2
+right2				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					adds    r6, #1
+					str    	r6, [r1]
+					adds 	r5, #1
+					cmp     r5, #100
+					bne     right2
+bottom2				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r4, #1
+					str		r4, [r1, #0x4]
+					adds 	r5, #1
+					cmp     r5, #150
+					bne     bottom2	
+left2				ldr     r3, =0xFFFF0000
+					str     r3, [r1, #0x8]
+					subs    r6, #1
+					str    	r6, [r1]
+					adds 	r5, #1
+					cmp     r5, #200
+					bne     left2
+					adds	r6, #25
+					adds	r4, #25
+
+nothing				movs    r3, #1
+					str     r3, [r1, #0xc] 		;refresh screen
+					
+					movs	r7, #0
+					ldr		r0, =0x40010010	
+					str 	r7, [r0]
+					pop	{r1}
+					bx		lr
+					ENDP
+						
+; Reset_Handler					
+;--------------------------------------------------------------------------------------------------------------------------------------	
+					; Define Reset Handler, that returns from back to interrupt
+					AREA	somearea, CODE, READONLY
+Reset_Handler		PROC
+					EXPORT Reset_Handler
+					ldr		r0, =0xE000E100
+					movs	r1, #1
+					str		r1, [r0]
+					CPSIE	i
+					ldr		r0, =__main
+					bx		r0
+					ENDP
+
+
+					; Data section
+					AREA myData, DATA, READWRITE
+
+					AREA	demo, CODE, READONLY
+					EXPORT	__main
+					ENTRY
+
+; Main Function					
+;--------------------------------------------------------------------------------------------------------------------------------------	
+					; Main proc
+__main				PROC
+	
+					ldr		r5, =0xFFFFFFFF ; White pixel code
+					ldr		r1, =0x40010000
+					
+					; SET THE BACKGROUND TO WHITE
+					movs 	r3, #0
+nr1					str    	r3, [r1]
+					movs	r4, #0
+nc1					str		r4, [r1, #0x4] 	;store col to col register  
+					str     r5, [r1, #0x8]
+					adds    r4, r4, #1     	;increment the col counter
+					ldr 	r2, =320
+					cmp     r4, r2       	;check if we reached end of row
+					bne     nc1
+					adds    r3, r3, #1     	;increment the row counter
+					cmp		r3, #240
+					bne		nr1
+			
+;--------------------------------------------------------------------------------
+					; Draw horizontal lines
+					ldr		r5, =0xFF000000 ; Black pixel code
+					movs 	r3, #15
+nr2					str    	r3, [r1]
+					movs	r4, #55
+nc2					str		r4, [r1, #0x4] 	;store col to col register  
+					str     r5, [r1, #0x8]
+					adds    r4, r4, #1     	;increment the col counter
+					ldr 	r2, =266
+					cmp     r4, r2       	;check if we reached end of row
+					bne     nc2
+					adds    r3, r3, #70     	;increment the row counter
+					cmp		r3, #230
+					bls		nr2
+
+;--------------------------------------------------------------------------------
+					; Draw vertical lines
+					movs	r3, #15					
+					movs 	r4, #55
+					
+nr3					str    	r4, [r1, #0x4]
+					movs	r3, #15
+					
+nc3					str		r3, [r1] 	;store col to col register  
+					str     r5, [r1, #0x8]
+					
+					adds    r3, r3, #1     	;increment the row counter		
+					cmp     r3, #225       	;check if we reached end of row
+					bne     nc3
+					adds    r4, r4, #70     	;increment the col counter
+					ldr 	r2, =300
+					cmp		r4, r2
+					bls		nr3
+
+					movs    r2, #1
+					str     r2, [r1, #0xc] 	;refresh screen	
+					
+; Initialize the RAM					
+;--------------------------------------------------------------------------------					
+					ldr		r5, =0x20000800
+					movs	r2, #0
+					movs	r3, #1
+ram_loop			str		r2, [r5]
+					adds	r5, r5, #4
+					adds	r3, r3, #1
+					cmp		r3, #36
+					bne		ram_loop
+					
+					ldr		r2, =0x20000800
+					movs	r3, #1
+					str		r3, [r2]
+					
+; Main loop					
+;--------------------------------------------------------------------------------					
+main_loop    		ldr		r1, =0x40010000
+				
+					b       main_loop		
+					ENDP
+					END
+
+
+
+					
