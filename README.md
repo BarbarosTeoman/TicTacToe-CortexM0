@@ -2,7 +2,7 @@
 
 This repository contains the source code for a Tic-Tac-Toe game developed by Alperen Bölükbaş, Ömer Bahadır Gökmen, and myself. The project is implemented in Cortex M0 assembly language, designed for a microcontroller and interfaced with an LCD display to represent the 3x3 game grid.
 
-**Note:** To make the LCD peripheral work, you will need to extend Keil with the provided DLL files. For this, you need to copy the two .dll files LCDDLL.dll and SDL2.dll into C:\Keil_v5\ARM\BIN folder (or to the BIN folder under whereever you installed Keil if you didn’t choose the default location) and then restart Keil. You can then open the LCD window from the Peripherals menu after starting the debugger by selecting the “Start/Stop Debugging Session” from the Debug menu. Do not forget to build your code by selecting “Build Target” option from the Project menu before starting the debugger; otherwise, you may get an error or your changes to the code may not take effect.
+‼️**Note:** To make the LCD peripheral work, you will need to extend Keil with the provided DLL files. For this, you need to copy the two .dll files LCDDLL.dll and SDL2.dll into C:\Keil_v5\ARM\BIN folder (or to the BIN folder under whereever you installed Keil if you didn’t choose the default location) and then restart Keil. You can then open the LCD window from the Peripherals menu after starting the debugger by selecting the “Start/Stop Debugging Session” from the Debug menu. Do not forget to build your code by selecting “Build Target” option from the Project menu before starting the debugger; otherwise, you may get an error or your changes to the code may not take effect.
 
 ## Project Description
 
